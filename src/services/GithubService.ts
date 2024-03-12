@@ -7,15 +7,14 @@ const githubRepo = String(process.env.GITHUB_REPO);
 
 class GithubService {
     createIssue = async (title: string, description: string, threadUrl: string, labels: string[]) => {
-        const body = `${description}
-        <h4> <a href="${threadUrl}">Discord Thread</a> </h4>`;
+        const body = `${description}\n` + `#### [Discord Thread](${threadUrl})`;
 
         const res = await octokit.rest.issues.create({
             owner: githubRepoOwner,
             repo: githubRepo,
             title,
             labels,
-            body
+            body,
         });
 
         // console.log(res);

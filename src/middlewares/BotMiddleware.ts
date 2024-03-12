@@ -28,7 +28,16 @@ class BotMiddleware {
 
             await next();
         }
-    };
+    }
+
+    followUpMessage = async (c: Context, next: Next) => {
+        console.log("followUpMiddleware");
+        await next();
+        const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        await sleep(5000);
+        console.log("sending follow up message");
+
+    }
 }
 
 export default new BotMiddleware();

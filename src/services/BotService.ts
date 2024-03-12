@@ -24,6 +24,16 @@ type MessageType = {
     referenced_message?: MessageType
 }
 
+type ChannelType = {
+    id: string,
+    type: number,
+    name?: string,
+    guild_id?: string,
+    parent_id?: string,
+    total_message_sent?: number,
+    message_count?: number
+};
+
 class BotService {
     discordRequest = async (endpoint: string, options: { method: string, body?: any }) => {
         const url = 'https://discord.com/api/v10/' + endpoint;
@@ -61,6 +71,7 @@ class BotService {
 
     interactions = async (body: any) => {
         const type = Number(body.type);
+        // console.log(body);
 
         switch (type) {
             case InteractionType.PING:
@@ -68,10 +79,10 @@ class BotService {
 
             case InteractionType.APPLICATION_COMMAND:
                 const channelType = Number(body?.channel?.type);
-                const channelId = body?.channel?.id;
-                const guildId = body?.channel?.guild_id;
+                const channel = body?.channel;
 
-                const [commandToken0, commandToken1, priority] = this.getCommandFromRawData(body.data);
+                const command = this.getCommandFromRawData(body.data);
+                const [commandToken0,] = command
 
                 if (channelType !== 11) {
                     return {
@@ -82,43 +93,24 @@ class BotService {
                     };
                 }
 
-                // if (commandToken0 === "test") {
-                //     return {
-                //         type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                //         data: {
-                //             content: 'hello world.',
-                //         }
-                //     };
-                // }
+                if (commandToken0 === "test") {
+                    return {
+                        type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
+                        data: {
+                            content: 'hello world.',
+                        }
+                    };
+                }
 
-                console.time("getThreadInfo");
-                const { threadTitle, threadDescription, threadUrl } = await this.getThreadInfo(channelId, guildId);
-                console.timeEnd("getThreadInfo");
-
-                // console.log(body);
-                console.time("createIssue");
-                const { issueUrl } = await githubService.createIssue(
-                    threadTitle,
-                    threadDescription,
-                    threadUrl,
-                    ["discord", commandToken1, priority]
-                );
-                console.timeEnd("createIssue");
-
-                return {
-                    type: InteractionResponseType.CHANNEL_MESSAGE_WITH_SOURCE,
-                    data: {
-                        content: `[Github ${commandToken1} ${commandToken0}](${issueUrl}) with ${priority} priority has been created.`,
-                        // embeds: [
-                        //     {
-                        //         type: "url",
-                        // description: `[Github ${commandToken1} ${commandToken0}](${issueUrl}) with ${priority} priority has been created.`,
-                        //         thumbnail: { url: issueUrl },
-                        //         // image: { url: issueUrl }
-                        //     }
-                        // ]
-                    }
-                };
+                if (commandToken0 === "ticket") {
+                    const token = body.token;
+                    this.followUpMessage(command, channel, token, process.env.APP_ID!);
+                    // const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+                    // await sleep(4000);
+                    return {
+                        type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
+                    };
+                }
 
             default:
                 return { message: "Hello Hono! post /interactions" };
@@ -137,32 +129,69 @@ class BotService {
         return commandTokens;
     }
 
-    getThreadInfo = async (channelId: string, guildId: string) => {
-        const endpoint = `channels/${channelId}/messages`;
+    getThreadInfo = async (channel: ChannelType) => {
+        const channelId = channel.id;
+        const threadTitle = channel.name!;
+        const guildId = channel.guild_id!;
+
+        const endpoint = `channels/${channelId}/messages?limit=100`;
         const res = await this.discordRequest(endpoint, { method: "GET" });
         const messages: MessageType[] = (await res.json());
 
-        // console.log(messages);
-        const threadStarterMsg = messages.at(-1);
-        let descriptionMsg = messages.at(-2);
+        let threadDescription = "{Description}";
+        if (messages.at(-1)!.type === 21) {
+            threadDescription = messages.at(-2)!.content;
+        }
 
-        // for (let i = -2; i >= -messages.length; i--) {
-        //     if (messages.at(i)?.author.id === threadStarterMsg?.author.id) {
-        //         descriptionMsg = messages.at(i);
-        //         break;
-        //     }
-        // }
-
-        const threadTitle = threadStarterMsg!.referenced_message!.content;
-        const threadDescription = descriptionMsg!.content;
         const threadUrl = `https://discord.com/channels/${guildId}/${channelId}`;
 
         return { threadTitle, threadDescription, threadUrl };
     }
 
-    getMessage = async (channelId: string, messageId: string) => {
-        const endpoint = `channels/${channelId}/messages/${messageId}`;
-        const msg = await this.discordRequest(endpoint, { method: "GET" });
+    followUpMessage = async (
+        command: string[],
+        channel: ChannelType,
+        token: string, appId: string) => {
+        const [commandToken0, commandToken1, priority] = command;
+
+        const channelId = channel.id;
+
+        console.time("getThreadInfo");
+        const { threadTitle, threadDescription, threadUrl } = await this.getThreadInfo(channel);
+        console.timeEnd("getThreadInfo");
+
+        // console.time("sleepFor2Secs");
+        // const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+        // await sleep(2000);
+        // console.timeEnd("sleepFor2Secs");
+
+        // console.log(body);
+
+        console.time("createIssue");
+        const { issueUrl } = await githubService.createIssue(
+            threadTitle,
+            threadDescription,
+            threadUrl,
+            ["discord", commandToken1, priority]
+        );
+        console.timeEnd("createIssue");
+
+        const followUpMessageUrl = `https://discord.com/api/v10/webhooks/${appId}/${token}/messages/@original?thread_id=${channelId}`;
+        // console.log(followUpMessageUrl)
+
+        const res = await fetch(followUpMessageUrl, {
+            headers: {
+                'Content-Type': 'application/json; charset=UTF-8',
+                'User-Agent': 'DiscordBot (https://github.com/OleksiiKH0240/Test_Project)',
+            },
+            method: "PATCH",
+            body: JSON.stringify({
+                content: `[Github ${commandToken1} ${commandToken0}](${issueUrl}) with ${priority} priority has been created.`
+            })
+        });
+
+        // console.log("followUpMessage res");
+        // console.log(await res.json());
     }
 }
 

@@ -15,8 +15,10 @@ app.get('/', (c) => {
 app.post(
   "/interactions",
   botMiddleware.verifyDiscordRequest(process.env.PUBLIC_KEY!),
+  // botMiddleware.followUpMessage,
   botController.interactions
 );
+
 
 const port = Number(process.env.PORT) || 80;
 
@@ -26,7 +28,9 @@ serve(
     port
   },
   async (info: AddressInfo) => {
-    console.log(`Server is running on port ${port}`);
+    console.log(`Bot server is running on port ${port}`);
     console.log(info);
   }
 );
+
+
