@@ -35,7 +35,7 @@ type ChannelType = {
     message_count?: number
 };
 
-const ChannelTypesNew = {
+const NewChannelTypes = {
     ...ChannelTypes,
     PUBLIC_THREAD: 11,
     GUILD_FORUM: 15
@@ -63,7 +63,6 @@ class BotService {
 
         if (!res.ok) {
             const data = await res.json();
-            console.log(res.status);
             throw new Error(JSON.stringify(data));
         }
 
@@ -149,27 +148,66 @@ class BotService {
         const parentChannel: ChannelType = await (await
             this.discordRequest(`channels/${channel.parent_id}`, { method: "GET" })).json();
 
+        const messages = await this.getChannelMessages(channelId, parentChannel.type, channel.message_count!);
+        // console.log(messages);
 
-        const endpoint = `channels/${channelId}/messages?limit=100`;
-        const res = await this.discordRequest(endpoint, { method: "GET" });
-        let messages: MessageType[] = (await res.json());
-        messages = messages.at(0)!.type === MessagesTypes.CHAT_INPUT_COMMAND ? messages.slice(1) : messages;
-
-        console.log(channel.message_count! + 1);
-        console.log(messages.length);
-        console.log(messages);
-
-        let threadDescription = "{Description}";
-        if (parentChannel.type === ChannelTypesNew.GUILD_TEXT && messages.at(-1)!.type === 21) {
+        let threadDescription = "";
+        if (parentChannel.type === NewChannelTypes.GUILD_TEXT) {
             threadDescription = messages.at(-2)!.content;
         }
-        else if (parentChannel.type === ChannelTypesNew.GUILD_FORUM && channel.message_count! + 1 === messages.length) {
+        else if (parentChannel.type === NewChannelTypes.GUILD_FORUM) {
             threadDescription = messages.at(-1)!.content;
         }
 
         const threadUrl = `https://discord.com/channels/${guildId}/${channelId}`;
 
         return { threadTitle, threadDescription, threadUrl };
+    }
+
+    getChannelMessages = async (channelId: string, parentChannelType: number, messageCount: number) => {
+        const channelMessagesLimit = 50;
+
+        const endpoint = `channels/${channelId}/messages?limit=${channelMessagesLimit}`;
+        let res = await this.discordRequest(endpoint, { method: "GET" });
+
+        let messages: MessageType[] = (await res.json());
+        messages = messages.at(0)!.type === MessagesTypes.CHAT_INPUT_COMMAND ? messages.slice(1) : messages;
+
+        // console.log(messageCount + 1);
+        // console.log(messages.length);
+        // console.log(messages);
+
+        const hasAllMessages = (parentChannelType: number, messageCount: number, messages: MessageType[]) => {
+            const textChannelThreadCondition = (parentChannelType === NewChannelTypes.GUILD_TEXT && messages.at(-1)!.type === 21);
+            const forumThreadCondition = (parentChannelType === NewChannelTypes.GUILD_FORUM && messageCount + 1 === messages.length);
+
+            return (textChannelThreadCondition || forumThreadCondition);
+        };
+
+        let lastMessageId: string, newMessages: MessageType[];
+        while (hasAllMessages(parentChannelType, messageCount, messages) === false) {
+            lastMessageId = messages.at(-1)!.id;
+
+            try {
+                res = await this.discordRequest(endpoint + `&before=${lastMessageId}`, { method: "GET" });
+            }
+            catch (error) {
+                console.log(error);
+                const { retry_after } = JSON.parse((error as Error).message);
+
+                const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+                await sleep((Number(retry_after) | 1) * 1000);
+                continue;
+            }
+            newMessages = (await res.json());
+            if (newMessages.length === 0) break;
+
+            messages = messages.concat(newMessages)
+
+            console.log(messages.length);
+        }
+
+        return messages;
     }
 
     followUpMessage = async (
