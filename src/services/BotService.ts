@@ -148,7 +148,7 @@ class BotService {
         const parentChannel: ChannelType = await (await
             this.discordRequest(`channels/${channel.parent_id}`, { method: "GET" })).json();
 
-        const messages = await this.getChannelMessages(channelId, parentChannel.type, channel.message_count!);
+        const messages = await this.getChannelMessages(channelId, channel.message_count!);
         // console.log(messages);
 
         let threadDescription = "";
@@ -164,8 +164,8 @@ class BotService {
         return { threadTitle, threadDescription, threadUrl };
     }
 
-    getChannelMessages = async (channelId: string, parentChannelType: number, messageCount: number) => {
-        const channelMessagesLimit = 50;
+    getChannelMessages = async (channelId: string, messageCount: number) => {
+        const channelMessagesLimit = 100;
 
         const endpoint = `channels/${channelId}/messages?limit=${channelMessagesLimit}`;
         let res = await this.discordRequest(endpoint, { method: "GET" });
@@ -177,15 +177,16 @@ class BotService {
         // console.log(messages.length);
         // console.log(messages);
 
-        const hasAllMessages = (parentChannelType: number, messageCount: number, messages: MessageType[]) => {
-            const textChannelThreadCondition = (parentChannelType === NewChannelTypes.GUILD_TEXT && messages.at(-1)!.type === 21);
-            const forumThreadCondition = (parentChannelType === NewChannelTypes.GUILD_FORUM && messageCount + 1 === messages.length);
+        const hasAllMessages = (messageCount: number, messages: MessageType[]) => {
+            // const textChannelThreadCondition = (parentChannelType === NewChannelTypes.GUILD_TEXT && messages.at(-1)!.type === 21);
+            // const forumThreadCondition = (parentChannelType === NewChannelTypes.GUILD_FORUM && messageCount + 1 === messages.length);
 
-            return (textChannelThreadCondition || forumThreadCondition);
+            // return (textChannelThreadCondition || forumThreadCondition);
+            return messageCount + 1 === messages.length;
         };
 
         let lastMessageId: string, newMessages: MessageType[];
-        while (hasAllMessages(parentChannelType, messageCount, messages) === false) {
+        while (hasAllMessages(messageCount, messages) === false) {
             lastMessageId = messages.at(-1)!.id;
 
             try {
@@ -248,7 +249,7 @@ class BotService {
             },
             method: "PATCH",
             body: JSON.stringify({
-                content: `[Github ${commandToken1} ${commandToken0}](${issueUrl}) with ${priority} priority has been created.`
+                content: `[Github ${commandToken1} ${commandToken0}](<${issueUrl}>) with ${priority} priority has been created.`
             })
         });
 
