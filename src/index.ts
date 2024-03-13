@@ -1,4 +1,4 @@
-import 'dotenv/config';
+import { PORT, PUBLIC_KEY } from './config';
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import botMiddleware from './middlewares/BotMiddleware';
@@ -14,21 +14,17 @@ app.get('/', (c) => {
 
 app.post(
   "/interactions",
-  botMiddleware.verifyDiscordRequest(process.env.PUBLIC_KEY!),
-  // botMiddleware.followUpMessage,
+  botMiddleware.verifyDiscordRequest(PUBLIC_KEY!),
   botController.interactions
 );
-
-
-const port = Number(process.env.PORT) || 80;
 
 serve(
   {
     fetch: app.fetch,
-    port
+    port: PORT
   },
   async (info: AddressInfo) => {
-    console.log(`Bot server is running on port ${port}`);
+    console.log(`Bot server is running on port ${PORT}`);
     console.log(info);
   }
 );

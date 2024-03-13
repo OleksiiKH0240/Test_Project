@@ -1,9 +1,10 @@
+import { GITHUB_TOKEN, GITHUB_REPO, GITHUB_REPO_OWNER } from "../config";
 import { Octokit } from "octokit";
 
 
-const octokit = new Octokit({ auth: process.env.GITHUB_TOKEN });
-const githubRepoOwner = String(process.env.GITHUB_REPO_OWNER);
-const githubRepo = String(process.env.GITHUB_REPO);
+const octokit = new Octokit({ auth: GITHUB_TOKEN });
+const githubRepoOwner = String(GITHUB_REPO_OWNER);
+const githubRepo = String(GITHUB_REPO);
 
 class GithubService {
     createIssue = async (title: string, description: string, threadUrl: string, labels: string[]) => {

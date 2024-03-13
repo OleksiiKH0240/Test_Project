@@ -1,51 +1,8 @@
-import { InteractionResponseType, InteractionType, ChannelTypes } from "discord-interactions";
+import { DISCORD_TOKEN, APP_ID } from "../config";
+import { DataType, ChannelType, MessageType, MessagesTypes, NewChannelTypes } from "../types/DiscordTypes";
+import { InteractionResponseType, InteractionType } from "discord-interactions";
 import githubService from "./GithubService";
 
-
-type CommandType = {
-    name: string,
-    options: CommandType[] | undefined,
-    type: number
-};
-
-type DataType = {
-    id: string
-} & CommandType
-
-type MessageType = {
-    id: string,
-    type: number,
-    content: string,
-    channel_id: string
-    author: {
-        id: string,
-        username: string
-    },
-    referenced_message?: MessageType
-    attachments?: any[]
-}
-
-type ChannelType = {
-    id: string,
-    type: number,
-    name?: string,
-    guild_id?: string,
-    parent_id?: string,
-    total_message_sent?: number,
-    message_count?: number
-};
-
-const NewChannelTypes = {
-    ...ChannelTypes,
-    PUBLIC_THREAD: 11,
-    GUILD_FORUM: 15
-};
-
-enum MessagesTypes {
-    DEFAULT = 0,
-    CHAT_INPUT_COMMAND = 20,
-    THREAD_STARTER_MESSAGE = 21
-}
 
 class BotService {
     discordRequest = async (endpoint: string, options: { method: string, body?: any }) => {
@@ -54,7 +11,7 @@ class BotService {
         if (options.body) options.body = JSON.stringify(options.body);
         const res = await fetch(url, {
             headers: {
-                Authorization: `Bot ${process.env.DISCORD_TOKEN}`,
+                Authorization: `Bot ${DISCORD_TOKEN}`,
                 'Content-Type': 'application/json; charset=UTF-8',
                 'User-Agent': 'DiscordBot (https://github.com/OleksiiKH0240/Test_Project)',
             },
@@ -116,7 +73,7 @@ class BotService {
 
                 if (commandToken0 === "ticket") {
                     const token = body.token;
-                    this.followUpMessage(command, channel, token, process.env.APP_ID!);
+                    this.followUpMessage(command, channel, token, APP_ID!);
 
                     return {
                         type: InteractionResponseType.DEFERRED_CHANNEL_MESSAGE_WITH_SOURCE
@@ -165,7 +122,7 @@ class BotService {
     }
 
     getChannelMessages = async (channelId: string, messageCount: number) => {
-        const channelMessagesLimit = 100;
+        const channelMessagesLimit = 3;
 
         const endpoint = `channels/${channelId}/messages?limit=${channelMessagesLimit}`;
         let res = await this.discordRequest(endpoint, { method: "GET" });
@@ -178,10 +135,6 @@ class BotService {
         // console.log(messages);
 
         const hasAllMessages = (messageCount: number, messages: MessageType[]) => {
-            // const textChannelThreadCondition = (parentChannelType === NewChannelTypes.GUILD_TEXT && messages.at(-1)!.type === 21);
-            // const forumThreadCondition = (parentChannelType === NewChannelTypes.GUILD_FORUM && messageCount + 1 === messages.length);
-
-            // return (textChannelThreadCondition || forumThreadCondition);
             return messageCount + 1 === messages.length;
         };
 

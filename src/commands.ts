@@ -1,4 +1,6 @@
+import { APP_ID } from "./config";
 import botService from "./services/BotService";
+
 
 const testCommand = {
     name: "test",
@@ -49,4 +51,4 @@ const ticketCommand = {
 
 const allCommands = [testCommand, ticketCommand];
 
-botService.installGlobalCommands(process.env.APP_ID!, allCommands);
+botService.installGlobalCommands(APP_ID!, allCommands);
