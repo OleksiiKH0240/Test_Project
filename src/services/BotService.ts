@@ -122,7 +122,7 @@ class BotService {
     }
 
     getLast2Messages = async (channelId: string, messagesCount: number) => {
-        const channelMessagesLimit = 3;
+        const channelMessagesLimit = 100;
 
         const endpoint = `channels/${channelId}/messages?limit=${channelMessagesLimit}`;
         let res = await this.discordRequest(endpoint, { method: "GET" });
