@@ -105,7 +105,7 @@ class BotService {
         const parentChannel: ChannelType = await (await
             this.discordRequest(`channels/${channel.parent_id}`, { method: "GET" })).json();
 
-        const messages = await this.getChannelMessages(channelId, channel.message_count!);
+        const messages = await this.getLast2Messages(channelId, channel.message_count!);
         // console.log(messages);
 
         let threadDescription = "";
@@ -121,26 +121,28 @@ class BotService {
         return { threadTitle, threadDescription, threadUrl };
     }
 
-    getChannelMessages = async (channelId: string, messageCount: number) => {
+    getLast2Messages = async (channelId: string, messagesCount: number) => {
         const channelMessagesLimit = 3;
 
         const endpoint = `channels/${channelId}/messages?limit=${channelMessagesLimit}`;
         let res = await this.discordRequest(endpoint, { method: "GET" });
 
-        let messages: MessageType[] = (await res.json());
-        messages = messages.at(0)!.type === MessagesTypes.CHAT_INPUT_COMMAND ? messages.slice(1) : messages;
+        let currMessages: MessageType[] = (await res.json()), 
+        last2Messages: MessageType[] = currMessages.slice(-2);
+        
+        currMessages = currMessages.at(0)!.type === MessagesTypes.CHAT_INPUT_COMMAND ? currMessages.slice(1) : currMessages;
 
         // console.log(messageCount + 1);
         // console.log(messages.length);
         // console.log(messages);
 
-        const hasAllMessages = (messageCount: number, messages: MessageType[]) => {
-            return messageCount + 1 === messages.length;
+        const hasAllMessages = (messageCount: number, currMessagesCount: number) => {
+            return messageCount + 1 === currMessagesCount;
         };
 
-        let lastMessageId: string, newMessages: MessageType[];
-        while (hasAllMessages(messageCount, messages) === false) {
-            lastMessageId = messages.at(-1)!.id;
+        let lastMessageId: string, currMessagesCount = currMessages.length;
+        while (hasAllMessages(messagesCount, currMessagesCount) === false) {
+            lastMessageId = currMessages.at(-1)!.id;
 
             try {
                 res = await this.discordRequest(endpoint + `&before=${lastMessageId}`, { method: "GET" });
@@ -150,18 +152,30 @@ class BotService {
                 const { retry_after } = JSON.parse((error as Error).message);
 
                 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
-                await sleep((Number(retry_after) | 1) * 1000);
+                
+                const sleepTime = (Number(retry_after) | 1);
+                console.log(`sleeping for ${sleepTime} seconds.`);
+
+                await sleep((sleepTime | 1) * 1000);
                 continue;
             }
-            newMessages = (await res.json());
-            if (newMessages.length === 0) break;
 
-            messages = messages.concat(newMessages)
+            currMessages = (await res.json());
+            // console.log(newMessages);
+            // if (currMessages.length === 0) {
+            //     console.log("there are no messages left.")
+            //     break;
 
-            console.log(messages.length);
+            // currMessages = currMessages.concat(newMessages)
+            currMessagesCount += currMessages.length;
+            last2Messages.push(...currMessages.slice(-2));
+            last2Messages = last2Messages.slice(-2);
+
+
+            // console.log(currMessages.length);
         }
-
-        return messages;
+            
+        return last2Messages;
     }
 
     followUpMessage = async (

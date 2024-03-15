@@ -2,13 +2,15 @@
   "scripts": {
     "dev": "tsx src/index.ts",
     "dev_watch": "tsx watch src/index.ts",
-    "build": "tsc",
+    "build": "esbuild src/index.ts --platform=node --target=ESNext --format=cjs --bundle --minify --outfile=dist/index.js",
+    "start": "pnpm build && node dist/index.js",
     "createCommands": "tsx src/commands.ts"
   },
   "dependencies": {
     "@hono/node-server": "^1.8.2",
     "discord-interactions": "^3.4.0",
     "dotenv": "^16.4.5",
+    "esbuild": "^0.20.2",
     "hono": "^4.0.9",
     "octokit": "^3.1.2"
   },
