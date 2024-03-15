@@ -99,7 +99,7 @@ then press green button 'Save Changes' to confirm changes
 , where 
 
 PORT is environmental variable you specified in your .env file before
-(if PORT equal 80 you can omit it and form url like this: **{host}/interactions**),
+(if PORT equals 80 you can omit it and form url like this: **{host}/interactions**),
 
 host is url which is usually given you by hosting service you are using (Example of host: **https://coolhosting.com**).
 
