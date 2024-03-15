@@ -153,10 +153,10 @@ class BotService {
 
                 const sleep = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
                 
-                const sleepTime = (Number(retry_after) | 1);
+                const sleepTime = (Number(retry_after) || 1);
                 console.log(`sleeping for ${sleepTime} seconds.`);
 
-                await sleep((sleepTime | 1) * 1000);
+                await sleep(sleepTime * 1000);
                 continue;
             }
 
