@@ -1,6 +1,6 @@
-import 'dotenv/config';
 import { verifyKey } from "discord-interactions";
 import { Context, Next } from "hono";
+import { errorTrack } from '../config';
 
 
 class BotMiddleware {
@@ -15,15 +15,19 @@ class BotMiddleware {
             if (signature !== undefined && timestamp !== undefined) {
                 const isValidRequest = verifyKey(rawBody, signature, timestamp, clientKey);
                 if (!isValidRequest) {
-                    console.log("Bad request signature.");
+                    const resMsg = "Bad request signature.";
+                    await errorTrack.sendError(new Error(resMsg));
+                    
                     c.status(401);
-                    return c.body('Bad request signature. ');
+                    return c.body(resMsg);
                 }
             }
             else {
-                console.log("lack of headers.")
+                const resMsg = "Some of the headers: 'X-Signature-Ed25519', 'X-Signature-Timestamp' are not specified. ";
+                await errorTrack.sendError(new Error(resMsg));
+
                 c.status(401);
-                return c.body("Some of the headers: 'X-Signature-Ed25519', 'X-Signature-Timestamp' are not specified. ");
+                return c.body(resMsg);
             }
 
             await next();

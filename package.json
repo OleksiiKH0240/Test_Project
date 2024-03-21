@@ -6,7 +6,6 @@
     "createCommandsProd": "esbuild src/commands.ts --platform=node --target=ESNext --format=cjs --bundle --minify --outfile=dist/commands.js && node dist/commands.js",
     "build": "esbuild src/index.ts --platform=node --target=ESNext --format=cjs --bundle --minify --outfile=dist/index.js",
     "start": "pnpm createCommandsProd && pnpm build && node dist/index.js"
-    
   },
   "dependencies": {
     "@hono/node-server": "^1.8.2",
@@ -14,7 +13,8 @@
     "dotenv": "^16.4.5",
     "esbuild": "^0.20.2",
     "hono": "^4.0.9",
-    "octokit": "^3.1.2"
+    "octokit": "^3.1.2",
+    "try-catch-cloud": "^1.0.39"
   },
   "devDependencies": {
     "@types/node": "^20.11.17",
