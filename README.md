@@ -69,6 +69,22 @@ GITHUB_REPO_OWNER={GITHUB_REPO_OWNER value}
 #
 
 
+- #### PROJECT_NAME, TRY_CATCH_CLOUD_API_KEY
+#
+As PROJECT_NAME you can choose whatever you want. It will stand for name of your project in try-catch-cloud. Then put it in your .env file like this:
+
+PROJECT_NAME={PROJECT_NAME value}
+
+You can find your TRY_CATCH_CLOUD_API_KEY by the url: https://try-catch-cloud.vercel.app.
+
+After that procced with "Log In -->" button, press cogwheel button(settings) at your top right and choose "Get Api Key" option(api key will be copied into your clipboard). 
+
+Then paste your api key in your .env file like this:
+
+TRY_CATCH_CLOUD_API_KEY={TRY_CATCH_CLOUD_API_KEY value}
+#
+
+
 ## To run bot server in docker use commands:
 
 #### docker build -t drizzle-bot .
