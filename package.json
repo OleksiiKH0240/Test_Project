@@ -4,7 +4,7 @@
     "dev": "tsx src/index.ts",
     "dev_watch": "tsx watch src/index.ts",
     "createCommandsProd": "esbuild src/commands.ts --platform=node --target=ESNext --format=cjs --bundle --minify --outfile=dist/commands.js && node dist/commands.js",
-    "build": "esbuild src/index.ts --platform=node --target=ESNext --format=cjs --bundle --minify --outfile=dist/index.js",
+    "build": "esbuild src/index.ts --platform=node --sourcemap --target=ESNext --format=cjs --bundle --minify --outfile=dist/index.js",
     "start": "pnpm createCommandsProd && pnpm build && node dist/index.js"
   },
   "dependencies": {

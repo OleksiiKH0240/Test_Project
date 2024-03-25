@@ -49,6 +49,6 @@ const ticketCommand = {
     ]
 }
 
-const allCommands = [testCommand, ticketCommand];
+const allCommands = [ticketCommand];
 
 botService.installGlobalCommands(APP_ID!, allCommands);
